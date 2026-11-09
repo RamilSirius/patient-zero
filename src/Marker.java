@@ -56,7 +56,57 @@ public class Marker {
      * Example: a = "ACGTAC", b = "TTACGT", k = 4: the words of a are ACGT, CGTA, GTAC; only ACGT is in b, so the answer is 1.
      */
     public static int sharedWords(String a, String b, int k) {
-        // TODO Mission 4
-        return -1;
+        if (k <= 0 || k > a.length() || k > b.length()) return 0;
+
+        // hash of every window of b -> the start positions of the windows with this hash
+        long[] hb = windowHashes(b, k);
+        Map<Long, List<Integer>> windowsOfB = new HashMap<>();
+        for (int j = 0; j < hb.length; j++) windowsOfB.computeIfAbsent(hb[j], h -> new ArrayList<>()).add(j);
+
+        long[] ha = windowHashes(a, k);
+        int count = 0;
+        for (int i = 0; i < ha.length; i++) {
+            List<Integer> candidates = windowsOfB.get(ha[i]);
+            if (candidates == null) continue;
+            for (int j : candidates) {
+                if (sameLetters(a, i, b, j, k)) { count++; break; }   // equal hashes are only a hint: check the letters
+            }
+        }
+        return count;
+    }
+
+    static final long BASE = 5;                 // more than the 4 letter codes 1..4
+    static final long MOD = 1_000_000_007L;     // a large prime
+
+    static int code(char c) {
+        switch (c) {
+            case 'A': return 1;
+            case 'C': return 2;
+            case 'G': return 3;
+            case 'T': return 4;
+            default:  return c;                 // never happens for A, C, G, T input
+        }
+    }
+
+    /** h[i] = hash of s[i..i+k-1] as a number in base BASE modulo MOD. Each next window is computed from the previous one in O(1). */
+    static long[] windowHashes(String s, int k) {
+        int count = s.length() - k + 1;
+        long[] h = new long[count];
+        long high = 1;                                           // BASE^(k-1) mod MOD: the weight of the letter that leaves
+        for (int t = 1; t < k; t++) high = high * BASE % MOD;
+        long cur = 0;
+        for (int t = 0; t < k; t++) cur = (cur * BASE + code(s.charAt(t))) % MOD;
+        h[0] = cur;
+        for (int i = 1; i < count; i++) {
+            cur = (cur - code(s.charAt(i - 1)) * high % MOD + MOD) % MOD;   // remove the old first letter (+MOD keeps it non-negative)
+            cur = (cur * BASE + code(s.charAt(i + k - 1))) % MOD;            // shift and add the new last letter
+            h[i] = cur;
+        }
+        return h;
+    }
+
+    static boolean sameLetters(String a, int i, String b, int j, int k) {
+        for (int t = 0; t < k; t++) if (a.charAt(i + t) != b.charAt(j + t)) return false;
+        return true;
     }
 }

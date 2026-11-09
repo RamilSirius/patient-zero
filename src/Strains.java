@@ -34,7 +34,16 @@ public class Strains {
      * Example: "ACGTT" and "AGTC": the longest is "AGT", length 3.
      */
     public static int lcsLength(String a, String b) {
-        // TODO Mission 2
-        return -1;
+        int n = a.length(), m = b.length();
+        // L[i][j] = the length of the longest common subsequence of the first i letters of a and the first j letters of b.
+        // Row 0 and column 0 stay 0: an empty prefix has nothing in common with anything.
+        int[][] L = new int[n + 1][m + 1];
+        for (int i = 1; i <= n; i++) {
+            for (int j = 1; j <= m; j++) {
+                if (a.charAt(i - 1) == b.charAt(j - 1)) L[i][j] = L[i - 1][j - 1] + 1;   // both last letters go into the core
+                else L[i][j] = Math.max(L[i - 1][j], L[i][j - 1]);                      // drop the last letter of a or of b
+            }
+        }
+        return L[n][m];
     }
 }
